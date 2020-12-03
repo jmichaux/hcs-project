@@ -1,6 +1,6 @@
 function [] = generate_xyth_dynamics()
-
-syms velx vely velth accx accy accth t real;
+syms x y th real;
+syms accx accy accth t real;
 syms velx0 vely0 velth0 real;
 syms daccx daccy daccth real;
 
@@ -9,17 +9,14 @@ vely = vely0 + accy*t;
 velth = velth0 + accth*t;
 
 dt = 1;
-daccx = 0;
-daccy = 0;
-daccth = 0;
+% daccx = 0;
+% daccy = 0;
+% daccth = 0;
 
-x = [velx; vely; velth; accx; accy; accth; t];
-dx = [accx; accy; accth; daccx; daccy; daccth; dt];
-
-x = [velx; vely; velth; t];
-dx = [accx; accy; accth; dt];
+z = [x; y; th; velx0; vely0; velth0; accx; accy; accth; t];
+dz = [velx; vely; velth; 0; 0; 0; 0; 0; 0; dt];
 
 syms tdummy udummy real;
-matlabFunction(dx, 'File', 'lintraj', 'vars', {tdummy, x, udummy});
+matlabFunction(dz, 'File', 'lintraj', 'vars', {tdummy, z, udummy});
 
 end
