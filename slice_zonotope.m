@@ -11,7 +11,7 @@ G = Z(:,2:end);
 g = G(:,idx);
 G(:,idx) = [];
 
-% add generator to center
+% add sliced generator to center
 c = c + val*g;
 
 % return new zonotope
