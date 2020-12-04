@@ -1,0 +1,69 @@
+%% Initialize
+clear; clc;
+
+nz = 10;        % state dim
+
+% Choose FRS from library according appropriate IC
+FRSload = load('Rcont_test');
+nFRS = length(FRSload.Rcont);  % 
+
+disp("Initializing params");
+
+%% Create Obstacles
+[Raw_Obstacles,nObs] = Create_Obstacles();
+nObs = 1;
+Obstacles = cell{nObs,1
+Obstacles(1,1)
+disp("Obstacles created");
+
+%% First slice out known generators and add to center for each zonotope
+% Output: Rcont_new = (c, <g_slice, g_nonslice>
+
+
+
+
+
+%% Extract g_nonslice from Rcont_new to be added to polytopes in opt
+% Output: Rcont_new = (c, <gslice>)
+%         Obs_new = (Aobs*g_nonslice, b_obs)
+
+
+
+
+
+%% Final prep before opt
+% formulate the center for optimization
+% c_opt_i = c_IC + K*gslice   % c_opt for each zonotpe in the FRS
+
+
+
+%% OPT
+cvx_begin
+
+% for loop for each zonotope for obstacles
+for i = 1:nFRS
+    for j = 1:nObs
+        
+%         -max(A2*c - b2) < 0
+    end
+end
+
+% Cost function
+
+cvx_end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

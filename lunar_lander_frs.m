@@ -3,7 +3,7 @@ clear;clc;
 %% parameters
 dim = 10; % [x; y; th; velx0; vely0; velth0; accx; accy; accth; t];
 t_plan = 1;
-dt = 0.01;
+dt = 0.5;
 
 generate_xyth_dynamics()
 
@@ -16,8 +16,9 @@ for i = 1:1 % we're going to loop over all velocity intervals
     
     % loop over intial velocities
     options.x0 = zeros(dim,1);
-    options.x0(4:5,1) = .5; 
-    options.R0 = zonotope([options.x0, diag([0; 0; 0; 0.1; 0.1; pi/12; 0.1; 0.1; pi/12; 0])]);
+%     options.x0(4:5,1) = .5;
+    options.x0(2,1) = 4;
+    options.R0 = zonotope([options.x0, diag([0; 0; 0; 0.1; 0.1; 0; 0.1; 0.1; 0; 0])]);
     
     options.timeStep = dt;
     options.taylorTerms=5; %number of taylor terms for reachable sets
@@ -63,7 +64,8 @@ for i = 1:1 % we're going to loop over all velocity intervals
 
     end
 
- 
+    filename = 'Rcont_test';
+    save(filename, 'Rcont','options');
 %     % save this FRS
 %     my_c_IC = c_IC(i);
 %     filename = sprintf('FRS_trig/trig_FRS_%0.3f.mat', my_c_IC);
