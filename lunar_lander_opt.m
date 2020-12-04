@@ -23,24 +23,58 @@ disp("Initializing params");
 
 %% Create Obstacles
 [Obstacles] = Create_Obstacles(idx_state);
+
 disp("Obstacles created!");
 
 %% First slice out known generators and add to center for each zonotope
 % Output: Rcont_new = (c, <g_slice, g_nonslice>)
 for i = 1:nFRS
-    init_idx = idx_state.vx:idx_state.vth;
+    init_idx = idx_state.vx:idx_state.vy;
     init_val = c_IC(init_idx);
     FRS.Rcont_init_slice{i,1} = slice_zonotope(FRS.Rcont{i,1},init_idx,init_val);
 end
 disp("Initial Zonotope slice for position and velocity generators");
 
-%% Extract g_nonslice from Rcont_new to be added to polytopes in opt
-% Output: Rcont_new = (c, <gslice>)
-%         Obs_new = (Aobs*g_nonslice, b_obs)
+%% Extract Z_nonslice from Rcont_init_slice
+idx_slice = idx_state.accx:idx_state.accy;
+for i=1:nFRS
+    Zi = FRS.Rcont_init_slice{i,1}.Z;
+    ci = Zi(:,1);
+    Gi = Zi(:,2:end);
+    [~,g_slice_col] = find(Gi(idx_slice,:));
+    
+    G_slice = Gi(:,g_slice_col)
+   
+    Gi(:,g_slice_col) = [];
+    G_nonslice = Gi
+    
+    Z_slice = zonotope([ci,G_slice])
+    FRS.Rcont_slice{i,1} = Z_slice
+    
+    Z_nonslice = zonotope([zeros(nz,1),G_nonslice])
+    FRS.Rcont_nonslice{i,1} = Z_nonslice
+%   k_slice = find(G(k_dim, :) ~= 0);
+end
+disp("Remove non-sliceable generators and add to obstacle.");
+disp("Remaining Zonotope has only slceable generators");
 
-
-
-
+%% Add nonslice zonotope to obstacles zonotope
+nObs = Obstacles.nObs;
+for i = 1:nObs
+    for j = 1:nFRS
+        Z_obs = Obstacles.zonotopes{i,1};
+        Z_nonslice = FRS.Rcont_nonslice{i,1}.Z;
+        c_ns = Z_nonslice(1:2,1);
+        G_ns = Z_nonslice(1:2,2:end);
+        Z_nonslice = zonotope([c_ns,G_ns]);
+        
+        Obstacles.buffered_zonotopes{i,1} = ...
+            generateNewZonoObs(Z_obs,Z_nonslice);
+        
+        [Obstacles.Apoly{i,1},Obstacles.bpoly{i,1}] = polytope_PH(Obstacles.buffered_zonotopes{i,1}.Z);
+    end
+end
+   
 
 %% Final prep before opt
 % formulate the center for optimization

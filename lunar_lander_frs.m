@@ -3,7 +3,7 @@ clear;clc;
 %% parameters
 dim = 10; % [x; y; th; velx0; vely0; velth0; accx; accy; accth; t];
 t_plan = 1;
-dt = 0.5;
+dt = 0.1;
 
 generate_xyth_dynamics()
 
