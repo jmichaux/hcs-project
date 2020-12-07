@@ -1,1 +1,1 @@
-Display the trajectories
+Display trajectories
