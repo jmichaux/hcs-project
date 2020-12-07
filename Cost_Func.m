@@ -6,9 +6,10 @@ y_init = c_IC(idx_state.y);
 vx_init = c_IC(idx_state.vx);
 vy_init = c_IC(idx_state.vy);
 tspan = FRS.options.tFinal - FRS.options.tStart;
-
-delta_state = [x_init + vx_init*tspan + (1/2)*k(1,1)*tspan^2 - x_goal;
-    y_init + vy_init*tspan + (1/2)*k(2,1)*tspan^2 - y_goal];
+x = x_init + vx_init*tspan + (1/2)*k(1,1)*tspan^2 - x_goal;
+y = y_init + vy_init*tspan + (1/2)*k(2,1)*tspan^2 - y_goal;
+delta_state = [x;
+    y];
 
 Cost = sum(delta_state.^2);
 

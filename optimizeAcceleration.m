@@ -1,6 +1,4 @@
-%% Initialize
-clear all; clc; close all;
-
+function [xout,yout,thetaout,vxout,vyout,vthetaout,axout,ayout,athetaout] = optimizeAcceleration(goalx,goaly)
 % state index struct
 idx_state = struct('x',     1,...
                    'y',     2,...
@@ -107,42 +105,63 @@ disp("Solving...");
 %% Fmincon
 disp('Solving FMincon');
 k_guess = zeros(2,1);
-k_UB = 0.1*ones(2,1);  % delta*(-)1 + c
+k_UB = 0.5*ones(2,1);  % delta*(-)1 + c
 k_LB = -k_UB;
 
-x_goal = 0;
-y_goal = 0;
+x_goal = goalx;
+y_goal = goaly;
 X_goal = [x_goal; y_goal];
 
-[sol,Cost_sol,flag] = fmincon(@(k) Cost_Func(k,c_IC,X_goal,idx_state,FRS),k_guess,[],[],[],[],...
-    k_LB,k_UB,@(k)Nonlinear_Con(k,idx_state,FRS,Obstacles))
-
-
-%% Plots
-% Original FRS
-figure;
-for i = 1:nFRS
-   hold on; 
-   p = plotFilled(FRS.Rcont{i,1}{1},[1,2],'b');
-   p.FaceAlpha = 0.4;
-end
-
-% Solution Trajectory
 x_init = c_IC(idx_state.x);
 y_init = c_IC(idx_state.y);
 vx_init = c_IC(idx_state.vx);
 vy_init = c_IC(idx_state.vy);
+
+
+[sol,Cost_sol,flag] = fmincon(@(k) Cost_Func(k,c_IC,X_goal,idx_state,FRS),k_guess,[],[],[],[],...
+    k_LB,k_UB,@(k)Nonlinear_Con(k,idx_state,FRS,Obstacles));
+
+
+%% Plots
+% Original FRS
+figure(1);
+% for i = 1:nFRS
+%    hold on; 
+%    p = plotFilled(FRS.Rcont{i,1}{1},[1,2],'b');
+%    p.FaceAlpha = 0.4;
+% end
+
+% Solution Trajectory
+% x_init = c_IC(idx_state.x);
+% y_init = c_IC(idx_state.y);
+% vx_init = c_IC(idx_state.vx);
+% vy_init = c_IC(idx_state.vy);
 tspan = FRS.options.tFinal - FRS.options.tStart;
 x_end = x_init + vx_init*tspan + (1/2)*sol(1,1)*tspan^2;
 y_end = y_init + vy_init*tspan + (1/2)*sol(2,1)*tspan^2;
-hold on;
-scatter([x_init x_end], [y_init y_end],50,'filled');
+% if (y_end <= 0)
+%     y_end = 0; 
+%     sol(2,1) = 2*(y_end - y_init - vy_init*tspan)/tspan^2;   
+% end
+
+xout = x_end;
+yout = y_end;
+thetaout = 0;
+vxout = vx_init+sol(1,1)*tspan;
+vyout = vy_init+sol(2,1)*tspan;
+vthetaout = 0;
+axout = sol(1,1);
+ayout = sol(2,1);
+athetaout = 0;
+
+
+scatter( x_end, y_end,50,'filled');
 
 
 % Obstacle
-hold on;
+ hold on;
 pobs = plotFilled(Obstacles.zonotopes{1},[1,2],'r');
-pobs.FaceAlpha = 0.4;
+pobs.FaceAlpha = 0;
 
 % Goal
 hold on;
@@ -150,22 +169,10 @@ scatter(x_goal,y_goal,20,'filled');
 
 % Plot settings
 hold on; yline(0,'k');
-xlim([-2 2]);
-ylim([-1 5]);
+xlim([-5 5]);
+ylim([-5 5]);
 
 
 %% Cost
 % sol_cost = Cost_Func(sol,c_IC,X_goal,idx_state,FRS)
-
-    
-
-
-
-
-
-
-
-
-
-
-
+end

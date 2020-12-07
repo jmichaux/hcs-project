@@ -11,7 +11,6 @@ for i = 1:nFRS
     A = Obstacles.Apoly{i,1};
     b = Obstacles.bpoly{i,1};
     c = [c; -max(A*C_new-b)];
-    
 end
-
+%  c = [c; -(y+vy+0.5*k(2,1))];
 end
