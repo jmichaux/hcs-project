@@ -65,15 +65,19 @@ for i = 1:nObs
         G_ns = Z_nonslice(1:2,2:end);
         Z_nonslice = zonotope([c_ns,G_ns]);
         
-        Obstacles.buffered_zonotopes{j,1} = ...
+        Obstacles.buffered_zonotopes{j,i} = ...
             generateNewZonoObs(Z_obs,Z_nonslice);
         
-        [Obstacles.Apoly{j,1},Obstacles.bpoly{j,1}] = polytope_PH(Obstacles.buffered_zonotopes{j,1}.Z);
+        [Obstacles.Apoly{j,i},Obstacles.bpoly{j,i}] = polytope_PH(Obstacles.buffered_zonotopes{j,i}.Z);
     end
 end
 disp("Add nonsliceable zonotopes to obstacles.");
 
-
+% for j = 1:nFRS
+%    hold on; 
+%    p = plotFilled(Obstacles.buffered_zonotopes{j,1},[1,2],'b');
+%    p.FaceAlpha = 0; 
+% end
 %% OPT
 % [A, b] means the polyhedron with nonslice generator for obstacles
 % C means the new center of each zonotope
@@ -103,9 +107,11 @@ disp("Solving...");
 % cvx_end
 
 %% Fmincon
+
 disp('Solving FMincon');
+
 k_guess = zeros(2,1);
-k_UB = 0.5*ones(2,1);  % delta*(-)1 + c
+k_UB = 2*ones(2,1);  % delta*(-)1 + c
 k_LB = -k_UB;
 
 x_goal = goalx;
@@ -119,8 +125,27 @@ vy_init = c_IC(idx_state.vy);
 
 
 [sol,Cost_sol,flag] = fmincon(@(k) Cost_Func(k,c_IC,X_goal,idx_state,FRS),k_guess,[],[],[],[],...
-    k_LB,k_UB,@(k)Nonlinear_Con(k,idx_state,FRS,Obstacles));
+k_LB,k_UB,@(k)Nonlinear_Con(k,idx_state,FRS,Obstacles,vx_init,vy_init));
 
+
+% while (flag ~= 1)
+% x_goal = 0.5*(x_init - (-3))+x_init;
+% y_goal = 0.5*(y_init - (3))+y_init;
+% [sol,Cost_sol,flag] = fmincon(@(k) Cost_Func(k,c_IC,X_goal,idx_state,FRS),k_guess,[],[],[],[],...
+% k_LB,k_UB,@(k)Nonlinear_Con(k,idx_state,FRS,Obstacles,vx_init,vy_init));
+% 
+% end
+% if (flag ~= 1)
+%     return;
+% end
+% flag
+% if(flag ~= 1)
+%  tspan = 1;
+%  x_new_end = 0.2*(x_init - (-2))+x_init;
+%  y_new_end = 0.2*(y_init - (3))+y_init;
+%  sol(1,1) = 2*(x_new_end - x_init - vx_init);
+%  sol(2,1) = 2*(y_new_end - y_init - vy_init);
+% end
 
 %% Plots
 % Original FRS
@@ -128,7 +153,7 @@ figure(1);
 % for i = 1:nFRS
 %    hold on; 
 %    p = plotFilled(FRS.Rcont{i,1}{1},[1,2],'b');
-%    p.FaceAlpha = 0.4;
+%    p.FaceAlpha = 0;
 % end
 
 % Solution Trajectory
@@ -155,22 +180,44 @@ ayout = sol(2,1);
 athetaout = 0;
 
 
-scatter( x_end, y_end,50,'filled');
 
 
 % Obstacle
- hold on;
-pobs = plotFilled(Obstacles.zonotopes{1},[1,2],'r');
+for i =1:nObs 
+hold on;
+pobs = plotFilled(Obstacles.zonotopes{i},[1,2],'r');
 pobs.FaceAlpha = 0;
+end
+
+for i = 1:nFRS
+    hold on;
+   C_obj = FRS.Rcont_slice{i,1}.center;
+    G_obj = FRS.Rcont_slice{i,1}.Z(:,2:end);
+    delta_g_obj = [G_obj(idx_state.accx,1); G_obj(idx_state.accy,2)]; % change with accth
+    lambda_obj = (sol - C_obj(7:8))./delta_g_obj;
+    C_new_obj = C_obj(1:2) + G_obj(1:2,:)*lambda_obj;
+    gs_obj = FRS.Rcont_nonslice{i,1}.Z(1:2,2:end);
+    obj_zono = zonotope([C_new_obj,gs_obj]);
+    p = plotFilled(obj_zono,[1,2],'b');
+   p.FaceAlpha = 0;
+   if (i == nFRS)
+       C_new_end = C_obj + G_obj*lambda_obj;
+       xout = C_new_end(1,1);
+      yout = C_new_end(2,1);
+      thetaout = C_new_end(3,1);
+%     vxout = C_new_end(4,1);
+%      vyout = C_new_end(5,1);
+   end
+end
+scatter( xout, yout,50,'filled');
 
 % Goal
-hold on;
-scatter(x_goal,y_goal,20,'filled');
+% hold on;
+% scatter(x_goal,y_goal,20,'filled');
 
 % Plot settings
 hold on; yline(0,'k');
-xlim([-5 5]);
-ylim([-5 5]);
+
 
 
 %% Cost
